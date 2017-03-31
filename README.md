@@ -2,7 +2,7 @@
 React front end Recipe player. A utility to play simple 'how tos' on mobile for small tasks.
 
 ex:- props to pass down.
-
+```json
 {
   "name": "Cheesy Bicuit Bites",
   "description": "A quick and easy snack for parties and gatherings.",
@@ -102,3 +102,4 @@ ex:- props to pass down.
     }
   ]
 }
+```
