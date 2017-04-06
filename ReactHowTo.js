@@ -1,36 +1,53 @@
 var React = require('react');
 
-
-var FullscreenSlider = React.createClass({
+//writing a lot of inline css for now.
+//Probably move to json based props instead of children nodes and freedom of styling.
+var FullscreenHowTo = React.createClass({
 	componentWillMount : function(){
 		var totalTime = 0;
+		var introNode = null;
+		var readIntro = false;
 		var refTimers = React.Children.map(this.props.children, 
 										   function(child){
 										   	totalTime+=child.props.time;
 										  	return {ref:child.key, timer:child.props.time,
 										  			elapsed:totalTime-child.props.time, node:child};
 										   });
-		this.setState({refTimers:refTimers, totalTime:totalTime, 
-					   stepCount:refTimers.length, activeText:0, activeTimer:0, 
-					   timeDisplay: refTimers[0].timer,});
+		if(refTimers[0].ref == "intro"){
+			introNode = refTimers[0];
+			readIntro = true;
+			refTimers.splice(0,1);
+		}
+		this.setState({refTimers:refTimers, totalTime:totalTime,
+					   stepCount:refTimers.length, activeText:0, activeTimer:0,
+					   timeDisplay: refTimers[0].timer,
+					   readIntro:readIntro,
+					   introNode:introNode});
 	},
 	componentDidMount: function(){
+		this.setState({stepChangeSound:new Audio('https://s3-us-west-2.amazonaws.com/fs-brew-static-images/step_change.mp3')});
 	},
 	open: function(){
 		this.refs.main.style.display = 'block';
 	},
 	close: function(){
 		this.refs.main.style.display = 'None';
+		clearInterval(this.state.ticker);
+		this.setState({ticker: null,
+					   refTimers:this.state.refTimers, totalTime:this.state.totalTime, 
+				       stepCount:this.state.refTimers.length, activeText:0, activeTimer:0, 
+				       timeDisplay: this.state.refTimers[0].timer,
+				   	   readIntro:true});
 	},
 	start: function(){
 		if(!this.state.ticker){
 			this.setState({ticker: setInterval(this.updateTimeDisplay, 1000),
 						   refTimers:this.state.refTimers, totalTime:this.state.totalTime, 
 					       stepCount:this.state.refTimers.length, activeText:0, activeTimer:0, 
-					       timeDisplay: this.state.refTimers[0].timer});
+					       timeDisplay: this.state.refTimers[0].timer,
+					   	   readIntro:false});
 		}
 	},
-	
 	readNextStep: function(){
 		var _activeText = this.state.activeText + 1;
 		if(_activeText<this.state.stepCount){
@@ -105,27 +122,52 @@ var FullscreenSlider = React.createClass({
 		var displayNode = this.state.refTimers[this.state.activeText].node;
 		var activeTimerDisplayVal = this.state.activeTimer + 1;
 		var activeReadDisplayVal = this.state.activeText + 1;
-		var activeStatus = <p style={{fontSize:'0.8rem', color:'green', margin:'0px', padding:'0px', fontWeight:'bold', lineHeight:'0.8rem'}}>
-								Reading active step.
-						   </p>;
+		var intro = "";
+		var closeButton = <i className="material-icons" style={{position:'fixed', top:'1vh', right:'1vw',zIndex:'1010',fontSize:'1.5rem',color:'black'}} 
+							 onClick={this.close}>close</i>;
+		if(this.state.readIntro){
+			intro = <div ref="intro" key="intro" style={{position:'fixed', top:'0px', left:'0px',height:'100vh', 
+						 			width:'100vw', textAlign:'center', backgroundColor:'white',
+					     			display:'block', zIndex:'1005',}}>
+		     			{this.state.introNode.node}
+		     			<button key="startButton" ref="startButton" style={{border:'1px solid #ff5722',borderRadius:'20px', 
+		     																  width:'70vw', backgroundColor:'white',position:'fixed',
+		     																  bottom:'2vh',left:'15vw', fontSize:'4vh', fontWeight:'bold'}}
+		     					onClick={this.start}>
+		     				Start
+		     			</button>
+					</div>;
+		}
+		var jumpControl = "";
 		var activeTimerStatus = <p style={{fontSize:'0.8rem', color:'white', margin:'0px', padding:'0px', fontWeight:'bold'}}>
 									Remaining to complete step {activeTimerDisplayVal + "/" + this.state.stepCount}.
 						   		</p>;
 		if(this.state.activeText != this.state.activeTimer){
-			activeStatus = <p style={{fontSize:'0.7rem', color:'red', margin:'0px', padding:'0px', fontWeight:'bold', lineHeight:'0.7rem'}}>
-								Double tap here to start this step.
-						   </p>;
+			jumpControl = <span style={{width:'33vw', height:'100%'}} onClick={this.startJumpStepTimer}>
+								<i className="material-icons" style={{borderRadius:'50%', fontSize:'2rem',
+																	  lineHeight:'3rem', width:'3rem', height:'3rem',
+																	  backgroundColor:'#f8f8f8', color:'#ff5722',
+																	  boxShadow:'0px 0px 4px 0px rgba(0,0,0,0.4)',
+																	  display:'inline-block'}}>fast_forward</i>
+								<div style={{fontSize:'10px', textAlign:'center', margin:'10px 0 0 0'}}>Start step {activeReadDisplayVal}</div>
+							</span>;
 		}
 		if(this.state.activeTimer == this.state.stepCount){
 			activeTimerStatus = <p style={{fontSize:'0.8rem', color:'white', margin:'0px', padding:'0px', fontWeight:'bold'}}>
 									Completed All steps.
 						   		</p>;
-			activeStatus = <p style={{fontSize:'0.7rem', color:'red', margin:'0px', padding:'0px', fontWeight:'bold', lineHeight:'0.7rem'}}>
-								Double tap here to restart.
-						   </p>;
+			jumpControl = <span style={{width:'33vw', height:'100%'}} onClick={this.start}>
+								<i className="material-icons" style={{borderRadius:'50%', fontSize:'2rem',
+																	  lineHeight:'3rem', width:'3rem', height:'3rem',
+																	  backgroundColor:'#f8f8f8', color:'#ff5722',
+																	  boxShadow:'0px 0px 4px 0px rgba(0,0,0,0.4)',
+																	  display:'inline-block'}}>replay</i>
+								<div style={{fontSize:'10px', textAlign:'center', margin:'10px 0 0 0'}}>Restart</div>
+							</span>;
 		}
 		var stepTransition="";
 		if(this.state.stepTransitioning){
+			this.state.stepChangeSound.play();
 			stepTransition=<div ref="transitionCover" style={{position:'fixed', top:'0px', left:'0px',height:'100vh', 
 						 			width:'100vw', textAlign:'center', backgroundColor:'white',
 					     			display:'block', zIndex:'1005', color:'#ff5722'}}>
@@ -147,8 +189,11 @@ var FullscreenSlider = React.createClass({
 							   padding:'0px', lineHeight:'12vh'}}>{this.state.timeDisplay}</p>
 					{activeTimerStatus}
 				</div>
-				<div ref="stepContent" style={{padding:'1rem 0.8rem 1rem 0.8rem', height:'75vh',overflow:'auto'}}>
+				<div ref="stepContent" style={{padding:'1rem 0.8rem 1rem 0.8rem', height:'63vh',overflow:'auto'}}>
 					{displayNode}
+				</div>
+				<div ref="controls" style={{height:'12vh',textAlign:'center'}}>
+					{jumpControl}
 				</div>
 				<div ref="bookmark" style={{position:'fixed', left:'0px', width:'100vw', bottom:'0px',
 										 	height:'10vh', backgroundColor:'white', color:'#ff5722',
@@ -158,7 +203,7 @@ var FullscreenSlider = React.createClass({
 						onClick={this.readPrevStep}>
 						keyboard_arrow_left
 					</i>
-					<p style={{fontSize:'7vh', lineHeight:'6vh', display:'inline-block', margin:'1vh 0 0 0', padding:'0px'}} onClick={this.doubleClicker}>
+					<p style={{fontSize:'7vh', lineHeight:'10vh', display:'inline-block', margin:'0px', padding:'0px'}}>
 						{activeReadDisplayVal + "/" + this.state.stepCount}
 					</p>
 					<i className="material-icons" style={{width:'5rem', float:'right',
@@ -166,8 +211,9 @@ var FullscreenSlider = React.createClass({
 						onClick={this.readNextStep}>
 						keyboard_arrow_right
 					</i>
-					{activeStatus}
 				</div>
+				{closeButton}
+				{intro}
 				{stepTransition}
 			</div>
 		);
@@ -175,4 +221,4 @@ var FullscreenSlider = React.createClass({
 
 });
 
-module.exports = FullscreenSlider;
+module.exports = FullscreenHowTo;
