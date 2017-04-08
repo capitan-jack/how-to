@@ -7,9 +7,8 @@ ex:- props to pass down.
   "name": "Cheesy Bicuit Bites",
   "description": "A quick and easy snack for parties and gatherings.",
   "general_info": {
-    "Tisme Required": "25mins",
-    "Serving": "4 person",
-    
+    "Time Required": "25mins",
+    "Serving": "4 person"
   },
   "equipments": [
     "Stove",
@@ -19,37 +18,48 @@ ex:- props to pass down.
     {
       "quantity": "1 tbsp",
       "name": "butter"
-    }{
+    },
+    {
       "quantity": "1 cup",
       "name": "boiled corn kennels"
-    }{
+    },
+    {
       "quantity": "1/2 cup",
       "name": "red/yellow/green bell peppers"
-    }{
+    },
+    {
       "quantity": "1 tbsp",
       "name": "all purpose flour"
-    }{
+    },
+    {
       "quantity": "To taste",
       "name": "Salt"
-    }{
+    },
+    {
       "quantity": "Pinch of",
       "name": "Pepper Powder"
-    }{
+    },
+    {
       "quantity": "Pinch of",
       "name": "Oregano"
-    }{
+    },
+    {
       "quantity": "1 tbsp",
       "name": "Tomato Sauce"
-    }{
+    },
+    {
       "quantity": "1 tbsp",
       "name": "Chilli Sauce"
-    }{
+    },
+    {
       "quantity": "1 cube",
       "name": "grated processed cheese"
-    }{
+    },
+    {
       "quantity": "16pc",
       "name": "Salted Biscuits"
-    }{
+    },
+    {
       "quantity": "1 cup",
       "name": "masala sev"
     }
@@ -62,18 +72,19 @@ ex:- props to pass down.
     },
     {
       "order": "2",
-      "time": "15}",
+      "time": "15",
       "step": "Add all purpose flour, mix well."
     },
     {
       "order": "3",
-      "time": "15}",
+      "time": "15",
       "step": "Add milk, cheese, salt, pepper powder, oregano and mix it well."
     },
     {
       "order": "4",
       "time": "300",
-      "step": "Add sauces, mix well and allow it to cook until mixture thickens like dough."
+      "step": "Add sauces, mix well and allow it to cook until mixture thickens like dough.",
+      "pu": true
     },
     {
       "order": "5",
@@ -102,4 +113,4 @@ ex:- props to pass down.
     }
   ]
 }
-```
+'''
