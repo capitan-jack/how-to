@@ -1,28 +1,10 @@
 var React = require('react');
 
 //writing a lot of inline css for now.
-//Probably move to json based props instead of children nodes and freedom of styling.
 var FullscreenHowTo = React.createClass({
 	componentWillMount : function(){
-		var totalTime = 0;
-		var introNode = null;
-		var readIntro = false;
-		var refTimers = React.Children.map(this.props.children, 
-										   function(child){
-										   	totalTime+=child.props.time;
-										  	return {ref:child.key, timer:child.props.time,
-										  			elapsed:totalTime-child.props.time, node:child};
-										   });
-		if(refTimers[0].ref == "intro"){
-			introNode = refTimers[0];
-			readIntro = true;
-			refTimers.splice(0,1);
-		}
-		this.setState({refTimers:refTimers, totalTime:totalTime,
-					   stepCount:refTimers.length, activeText:0, activeTimer:0,
-					   timeDisplay: refTimers[0].timer,
-					   readIntro:readIntro,
-					   introNode:introNode});
+		this.setState({activeText:0, activeTimer:0,
+					   readIntro:true,timeDisplay:this.props.data.steps[0].time});
 	},
 	componentDidMount: function(){
 		this.setState({stepChangeSound:new Audio('https://s3-us-west-2.amazonaws.com/fs-brew-static-images/step_change.mp3')});
@@ -33,24 +15,18 @@ var FullscreenHowTo = React.createClass({
 	close: function(){
 		this.refs.main.style.display = 'None';
 		clearInterval(this.state.ticker);
-		this.setState({ticker: null,
-					   refTimers:this.state.refTimers, totalTime:this.state.totalTime, 
-				       stepCount:this.state.refTimers.length, activeText:0, activeTimer:0, 
-				       timeDisplay: this.state.refTimers[0].timer,
-				   	   readIntro:true});
+		this.setState({ticker: null, activeText:0, activeTimer:0,
+				   	   readIntro:true,timeDisplay:this.props.data.steps[0].time});
 	},
 	start: function(){
 		if(!this.state.ticker){
 			this.setState({ticker: setInterval(this.updateTimeDisplay, 1000),
-						   refTimers:this.state.refTimers, totalTime:this.state.totalTime, 
-					       stepCount:this.state.refTimers.length, activeText:0, activeTimer:0, 
-					       timeDisplay: this.state.refTimers[0].timer,
 					   	   readIntro:false});
 		}
 	},
 	readNextStep: function(){
 		var _activeText = this.state.activeText + 1;
-		if(_activeText<this.state.stepCount){
+		if(_activeText<this.props.data.steps.length){
 			this.setState({activeText:_activeText});
 		}
 	},
@@ -71,27 +47,9 @@ var FullscreenHowTo = React.createClass({
 	startJumpStepTimer: function(){
 		var _activeText = this.state.activeText;
 		this.timerToggle();
-		this.setState({timeDisplay: this.state.refTimers[_activeText].timer,
+		this.setState({timeDisplay: this.props.data.steps[_activeText].time,
 					   activeTimer:_activeText,
 					   stepTransitioning:setTimeout(this.startSetStep, 1000)});
-	},
-	doubleClicker: function(){
-		if(!this.state.doubleClicker){
-			this.setState({doubleClicker:setTimeout(this.clearDoubleClicker,450)});
-		}else{
-			clearTimeout(this.state.doubleClicker);
-			this.setState({doubleClicker:null}, function(){
-				if(this.state.ticker){
-					this.startJumpStepTimer();
-				}else{
-					this.start();
-				}
-			}.bind(this));			
-		}
-	},
-	clearDoubleClicker:function(){
-		clearTimeout(this.doubleClicker);
-		this.setState({doubleClicker:null});
 	},
 	updateTimeDisplay: function(){
 		if(this.state.timeDisplay == 0){
@@ -103,8 +61,8 @@ var FullscreenHowTo = React.createClass({
 	},
 	startNextStep: function(){
 		var _activeTimer = this.state.activeTimer + 1;
-		if(_activeTimer<this.state.stepCount){
-			this.setState({timeDisplay: this.state.refTimers[_activeTimer].timer,
+		if(_activeTimer<this.props.data.steps.length){
+			this.setState({timeDisplay: this.props.data.steps[_activeTimer].time,
 					   		activeTimer:_activeTimer,
 					   		activeText:_activeTimer,
 					   		stepTransitioning:setTimeout(this.startSetStep, 1000)});
@@ -112,14 +70,20 @@ var FullscreenHowTo = React.createClass({
 		}
 		clearInterval(this.state.ticker);
 		this.setState({timeDisplay: '- -',
-					   	activeTimer:this.state.stepCount,
+					   	activeTimer:this.props.data.steps.length,
 					   	ticker:null});
 	},
 	startSetStep:function(){
 		this.setState({stepTransitioning:null}, this.timerToggle);
 	},
 	render: function(){
-		var displayNode = this.state.refTimers[this.state.activeText].node;
+		var displayNode = <p key={2} time={15} style={{fontSize:'2rem'}}>
+                      			{this.props.data.steps[this.state.activeText].step}
+                  		  </p>
+        var infoText = "";
+        if(this.props.data.steps[this.state.activeText].pu){
+        	infoText = <p style={{fontSize:'1rem', color:'#807b7b'}}>(You can tap the countdown to play/pause to cook until satisfied)</p>;
+        }
 		var activeTimerDisplayVal = this.state.activeTimer + 1;
 		var activeReadDisplayVal = this.state.activeText + 1;
 		var intro = "";
@@ -129,7 +93,6 @@ var FullscreenHowTo = React.createClass({
 			intro = <div ref="intro" key="intro" style={{position:'fixed', top:'0px', left:'0px',height:'100vh', 
 						 			width:'100vw', textAlign:'center', backgroundColor:'white',
 					     			display:'block', zIndex:'1005',}}>
-		     			{this.state.introNode.node}
 		     			<button key="startButton" ref="startButton" style={{border:'1px solid #ff5722',borderRadius:'20px', 
 		     																  width:'70vw', backgroundColor:'white',position:'fixed',
 		     																  bottom:'2vh',left:'15vw', fontSize:'4vh', fontWeight:'bold'}}
@@ -140,7 +103,7 @@ var FullscreenHowTo = React.createClass({
 		}
 		var jumpControl = "";
 		var activeTimerStatus = <p style={{fontSize:'0.8rem', color:'white', margin:'0px', padding:'0px', fontWeight:'bold'}}>
-									Remaining to complete step {activeTimerDisplayVal + "/" + this.state.stepCount}.
+									Remaining to complete step {activeTimerDisplayVal + "/" + this.props.data.steps.length}.
 						   		</p>;
 		if(this.state.activeText != this.state.activeTimer){
 			jumpControl = <span style={{width:'33vw', height:'100%'}} onClick={this.startJumpStepTimer}>
@@ -152,7 +115,7 @@ var FullscreenHowTo = React.createClass({
 								<div style={{fontSize:'10px', textAlign:'center', margin:'10px 0 0 0'}}>Start step {activeReadDisplayVal}</div>
 							</span>;
 		}
-		if(this.state.activeTimer == this.state.stepCount){
+		if(this.state.activeTimer == this.props.data.steps.length){
 			activeTimerStatus = <p style={{fontSize:'0.8rem', color:'white', margin:'0px', padding:'0px', fontWeight:'bold'}}>
 									Completed All steps.
 						   		</p>;
@@ -173,7 +136,7 @@ var FullscreenHowTo = React.createClass({
 					     			display:'block', zIndex:'1005', color:'#ff5722'}}>
 					     			<div style={{position:'relative', top:'40vh',}}>
 					     				<i className="material-icons" style={{fontSize:'10vh',}}>alarm</i>
-				                      	<p style={{fontSize:'2rem',}}>Starting step {activeTimerDisplayVal + "/" + this.state.stepCount}</p>
+				                      	<p style={{fontSize:'2rem',}}>Starting step {activeTimerDisplayVal + "/" + this.props.data.steps.length}</p>
 				                   	</div>
 
 					     	</div>
@@ -191,6 +154,7 @@ var FullscreenHowTo = React.createClass({
 				</div>
 				<div ref="stepContent" style={{padding:'1rem 0.8rem 1rem 0.8rem', height:'63vh',overflow:'auto'}}>
 					{displayNode}
+					{infoText}
 				</div>
 				<div ref="controls" style={{height:'12vh',textAlign:'center'}}>
 					{jumpControl}
@@ -204,7 +168,7 @@ var FullscreenHowTo = React.createClass({
 						keyboard_arrow_left
 					</i>
 					<p style={{fontSize:'7vh', lineHeight:'10vh', display:'inline-block', margin:'0px', padding:'0px'}}>
-						{activeReadDisplayVal + "/" + this.state.stepCount}
+						{activeReadDisplayVal + "/" + this.props.data.steps.length}
 					</p>
 					<i className="material-icons" style={{width:'5rem', float:'right',
 														  fontSize:'10vh',}}
